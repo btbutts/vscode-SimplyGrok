@@ -9,5 +9,24 @@
         "dist": true // set this to false to include "dist" folder in search results
     },
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
-    "typescript.tsc.autoDetect": "off"
+    "typescript.tsc.autoDetect": "off",
+    "vscodeGrok.apiKey": "<YOUR_API_KEY_HERE>",
+    "vscodeGrok.outputMethod": "outputChannel",
+    "vscodeGrok.model": "grok-4-1-fast-reasoning",
+    "vscodeGrok.excludeFiles": [
+        "node_modules",
+        ".git*",
+        "dist",
+        "out",
+        "package-lock.json",
+        "yarn.lock",
+        "pnpm-lock.yaml",
+        "*.log",
+        ".gitignore",
+        "*.md",
+        ".npmrc",
+        ".vscode*",
+        ".vscode/*",
+        "**/test/**"
+    ]
 }
