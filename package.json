@@ -1,5 +1,5 @@
 {
-  "name": "@btbutts/vscode-simplygrok",
+  "name": "vscode-simplygrok",
   "displayName": "Simply Grok for VSCode",
   "description": "Send source files to Grok and a question.",
   "version": "1.1.1-b",
