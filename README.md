@@ -1,5 +1,7 @@
 # Simply Grok for VSCode
 
+## Originally developed by @eriktodx!
+
 [![Version](https://img.shields.io/badge/Version-1.1.1-green)](https://github.com/eriktodx/vscode-grok/releases)
 [![GitHub](https://img.shields.io/badge/GitHub-vscode--grok-blue)](https://github.com/eriktodx/vscode-grok)
 [![VSCode Extension](https://img.shields.io/badge/VSCode_Extension-Simply_Grok_for_VSCode-red)](https://marketplace.visualstudio.com/items?itemName=ErikKralj.vscode-grok)
@@ -20,6 +22,30 @@ A Visual Studio Code extension that integrates with the xAI API to allow develop
 - **Customizable Output** - Choose to display Grok's responses in a new editor tab or the Output panel.
 - **Data Preview** - Review the data being sent to the Grok API before submission, with configurable settings for when previews appear.
 - **Model Selection** - Select from a variety of Grok models to suit your needs.
+
+## Update 1.1.1.b
+#### This version has been modified to suport grok-4-1-fast-reasoning as well as the ability to define file and directory exclusions, including by wildcard by setting `vscodeGrok.excludeFiles` as an array of file/foldernames within the workspace's settings.json file. The goal is to reduce the number of files that are sent to Grok when asking a question in workspace mode, saving precious tokens.
+
+The key structure shall look like the following and be subordinate of the `configuration`.`properties` keys, inline with `vscodeGrok.apiKey`, `vscodeGrok.model`, etc...:
+```json
+"vscodeGrok.excludeFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "node_modules",
+            ".git*",
+            "dist",
+            "out",
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml",
+            "*.log",
+            ".gitignore",
+            "*.md"
+          ],
+```
 
 ## Build, package and test
 
@@ -78,7 +104,7 @@ This extension uses the xAI API, which may incur costs based on your usage and s
 
 We welcome contributions to improve Simply Grok for VSCode! Here's how you can help:
 
-- **Report Issues**: Submit bugs or feature requests on the [GitHub Issues page](https://github.com/eriktodx/vscode-grok/issues).
+- **Report Issues**: Submit bugs or feature requests on the [GitHub Issues page](https://github.com/btbutts/vscode-grok/issues).
 - **Submit Pull Requests**: Fork the repository, make changes, and submit a PR at [GitHub Pull Requests](https://github.com/eriktodx/vscode-grok/pulls).
 - **Share Feedback**: Let us know how we can make this extension better.
 
@@ -88,7 +114,7 @@ This extension is licensed under the [MIT License](LICENSE). See the license fil
 
 ## Links
 
-- **GitHub Repository**: [https://github.com/eriktodx/vscode-grok](https://github.com/eriktodx/vscode-grok)
+- **GitHub Repository**: [https://github.com/eriktodx/vscode-grok](https://github.com/btbutts/vscode-grok)
 - **VSCode Marketplace**: [Simply Grok for VSCode](https://marketplace.visualstudio.com/items?itemName=ErikKralj.vscode-grok)
 - **Open VSX Registry**: [Simply Grok for VSCode](https://open-vsx.org/extension/ErikKralj/vscode-grok)
 
