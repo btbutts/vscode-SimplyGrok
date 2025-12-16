@@ -1,12 +1,15 @@
 {
-  "name": "vscode-grok",
+  "name": "@btbutts/vscode-simplygrok",
   "displayName": "Simply Grok for VSCode",
   "description": "Send source files to Grok and a question.",
   "version": "1.1.1-b",
   "publisher": "btbutts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/eriktodx/vscode-grok.git"
+    "url": "https://github.com/btbutts/vscode-SimplyGrok.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   },
   "icon": "resources/vscode-grok.png",
   "engines": {
@@ -67,14 +70,15 @@
           },
           "default": [
             "node_modules",
-            ".git",
+            ".git*",
             "dist",
             "out",
             "package-lock.json",
             "yarn.lock",
             "pnpm-lock.yaml",
-            ".log",
-            ".gitignore"
+            "*.log",
+            ".gitignore",
+            "*.md"
           ],
           "description": "List of file basenames to exclude from workspace queries (case-insensitive exact match). Useful for ignoring large or irrelevant files like dependencies and build outputs."
         }
