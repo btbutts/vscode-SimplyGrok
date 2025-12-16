@@ -10,3 +10,6 @@ node_modules
 .vscode/settings.json
 .vscode/*
 */Code/User/settings.json
+**/settings.json
+.vscode/settings.json
+.vscode/settings.json
