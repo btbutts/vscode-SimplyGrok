@@ -55,9 +55,12 @@ Customize the extension via the VSCode Settings UI or `settings.json`:
 - **Model**: Choose the Grok model to use (`vscodeGrok.model`).
 - **Output Method**: Decide where responses appear (`vscodeGrok.outputMethod`).
 - **Show Preview**: Control when to preview data sent to Grok (`vscodeGrok.showPreview`).
+- **Exclude Files**: Add files to be _excluded_ from Workspace queries to Grok (`vscodeGrok.excludeFiles`).
+- **Include Files**: Add files to be _included_ from Workspace queries to Grok (`vscodeGrok.excludeFiles`). <br> These have a greater weight and may be used to override `vscodeGrok.excludeFiles`.
 
 ### Available Models
 
+- `grok-4-1-fast-reasoning`: **NEW!** Very fast, economical, yet smooth reasoning model with superior code generation.
 - `grok-code-fast`: Speedy and economical reasoning model that excels at agentic coding.
 - `grok-4`: Unparalleled performance in natural language, math and reasoning - the perfect jack of all trades.
 - `grok-3`: Excels at enterprise use cases like data extraction, coding, and text summarization. Possesses deep domain knowledge in finance, healthcare, law, and science.
