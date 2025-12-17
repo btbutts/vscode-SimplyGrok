@@ -90,8 +90,11 @@ export function shouldIncludeFile(uri: vscode.Uri, workspaceRoot: string): boole
 export async function readFileAsUtf8(uri: vscode.Uri) {
   const fileContent = await vscode.workspace.fs.readFile(uri);
 
-  // Convert Uint8Array to string with UTF-8 encoding
-  return new TextDecoder("utf-8").decode(fileContent);
+  // Convert Uint8Array to string with UTF-8 encoding using Buffer for Node compatibility
+  // Previously used TextDecoder, but Buffer is more reliable in Node context v24
+  // Would need to import 'dom lib' for TextDecoder in Node to retain that approach
+  // return new TextDecoder("utf-8").decode(fileContent);
+  return Buffer.from(fileContent).toString("utf-8");
 }
 
 // Reworked getFilesList to use new shouldIncludeFile function
