@@ -8,4 +8,5 @@ export type Context = {
   apiKey: string;
   model: string;
   question: string;
+  stateful: boolean;
 };

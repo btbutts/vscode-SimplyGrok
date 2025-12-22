@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getApiKey, getModel, setApiKey } from "./config";
+import { getApiKey, getModel, setApiKey, getEnableStatefulSessions } from "./config";
 import { promptForApiKey, promptForQuestion } from "./ui";
 import { Context } from "./types";
 
@@ -56,5 +56,6 @@ export async function prepareContext(): Promise<Context> {
   const apiKey = await ensureApiKey();
   const model = await ensureModel();
   const question = await ensureQuestion();
-  return { apiKey, model, question };
+  const stateful = (await getEnableStatefulSessions()) ?? false;
+  return { apiKey, model, question, stateful };
 }

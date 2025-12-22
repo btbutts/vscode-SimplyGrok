@@ -10,10 +10,11 @@ import { showProgress } from "./ui";
 async function handleSendToGrok(
   apiKey: string,
   model: string,
-  prompt: string
+  prompt: string,
+  stateful: boolean
 ): Promise<void> {
   const response = await showProgress("Grok is thinking...", () =>
-    sendToGrok(apiKey, model, prompt)
+    sendToGrok(apiKey, model, prompt, stateful)
   );
 
   if (!response || !response.choices || !response.choices.length) {
@@ -43,7 +44,7 @@ async function handleAskGrok(type: MessageType): Promise<void> {
       return;
     }
 
-    await handleSendToGrok(context.apiKey, context.model, prompt);
+    await handleSendToGrok(context.apiKey, context.model, prompt, context.stateful);
   } catch (error) {
     console.error(error);
   }

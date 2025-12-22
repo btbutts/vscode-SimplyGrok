@@ -1,13 +1,15 @@
 import axios from "axios";
-import { API_URL } from "./const";
+import { API_URL, API_URL_STATEFUL } from "./const";
 
 export async function sendToGrok(
   apiKey: string,
   model: string,
-  content: string
+  content: string,
+  stateful: boolean
 ): Promise<any> {
+  const url = stateful ? API_URL_STATEFUL : API_URL;
   const response = await axios.post(
-    API_URL,
+    url,
     {
       messages: [{ role: "user", content }],
       model,

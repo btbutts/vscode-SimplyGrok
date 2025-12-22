@@ -74,6 +74,43 @@ function getWebviewContent(data: string): string {
     <!DOCTYPE html>
     <html>
     <head>
+      <style>
+        body { 
+          margin: 0;
+          padding: 20px;
+          font-family: var(--vscode-font-family);
+          height: 100vh;
+          overflow: auto;
+          box-sizing: border-box;
+        }
+        pre {
+          white-space: pre-wrap;
+          word-break: break-word;
+          max-height: 70vh;
+          overflow: auto;
+          margin: 0;
+          padding: 10px;
+          border: 1px solid var(--vscode-input-border);
+          font-family: var(--vscode-font-family-monospaced);
+          font-size: var(--vscode-editor-font-size);
+        }
+        .buttons {
+          margin-top: 20px;
+          padding-bottom: 30px;
+          text-align: center;
+        }
+        button {
+          margin: 0 10px;
+          padding: 8px 16px;
+          font-size: var(--vscode-font-size);
+        }
+        h3 {
+          margin-bottom: 10px;
+        }
+        hr {
+          margin: 20px 0;
+        }
+      </style>
     </head>
     <body>
       <h3>Data to Send to Grok API:</h3>
