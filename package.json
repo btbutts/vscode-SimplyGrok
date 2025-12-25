@@ -2,7 +2,7 @@
   "name": "vscode-grok",
   "displayName": "Simply Grok for VSCode",
   "description": "Send source files to Grok and a question.",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "publisher": "ErikKralj",
   "repository": {
     "type": "git",
@@ -19,6 +19,9 @@
     "Chat"
   ],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "configuration": {
       "title": "Simply Grok for VSCode Settings",
@@ -74,7 +77,17 @@
             "**/out/**",
             "**/*.min.*",
             ".gitignore",
-            ".dockerignore"
+            ".dockerignore",
+            "package-lock.json",
+            "README.md",
+            "LICENSE",
+            "CHANGELOG.md",
+            "CONTRIBUTING.md",
+            "esbuild.js",
+            "eslint.config.js",
+            "tsconfig.json",
+            ".vscode-test.mjs",
+            "vscode-grok-*.vsix"
           ],
           "description": "Exclude files or directories by glob patterns or exact matches from workspace queries.\n(e.g., ['**/.vscode/**', '**/node_modules/**', '.gitignore'])"
         },
@@ -94,7 +107,13 @@
         "vscodeGrok.submitWithEditor": {
           "type": "boolean",
           "default": false,
-          "description": "Enable submitting questions via a dedicated editor window\n(supports multiline, copy/paste, tab-switching) instead of the Command Palette Input Box."
+          "description": "Enable submitting questions via a dedicated editor\nwindow instead of the Command Palette Input Box.\n(supports multiline, copy/paste, tab-switching)"
+        },
+        "vscodeGrok.lastResponseId": {
+          "type": "string",
+          "default": "",
+          "description": "Last response ID from Grok for stateful sessions.",
+          "scope": "workspace"
         }
       }
     },
@@ -118,6 +137,11 @@
         "command": "vscode-grok.askGrokSelection",
         "title": "Ask Grok: Selected Text",
         "description": "Ask Grok a question about currently selected text in active tab."
+      },
+      {
+        "command": "vscode-grok.toggleStatefulAPI",
+        "title": "Set Grok: Enable Stateful Sessions",
+        "description": "Enable stateful sessions with Grok, allowing context retention across multiple interactions."
       }
     ]
   },

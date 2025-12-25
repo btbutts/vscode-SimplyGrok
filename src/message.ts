@@ -1,16 +1,12 @@
 import * as vscode from "vscode";
 import {
-  getActiveFunctionText,
-  getActiveTab,
   getFilesList,
-  getSelectedText,
-  readFileAsUtf8,
+  readFileAsUtf8
 } from "./editor";
 import { MessageType } from "./types";
 
-async function getWorkspaceMessage(
-  question: string
-): Promise<string | undefined> {
+
+export async function getWorkspaceRawContent(): Promise<string> {
   const uris = await getFilesList();
   if (!uris.length) {
     vscode.window.showErrorMessage("No files found in workspace!");
@@ -28,56 +24,32 @@ async function getWorkspaceMessage(
       `${buffer}${i ? "\n\n" : ""}${file.path}\n${file.content}`,
     ""
   );
-  return [
-    `Please consider the following project files:`,
-    content,
-    `Question: ${question}`,
-  ].join("\n\n");
+  return content;
 }
 
-async function getTabMessage(question: string): Promise<string | undefined> {
-  const tab = getActiveTab();
-  return [
-    `Please consider the following project file:`,
-    `${tab.path}\n${tab.content}`,
-    `Question: ${question}`,
-  ].join("\n\n");
-}
-
-async function getFunctionMessage(
-  question: string
-): Promise<string | undefined> {
-  const funcText = await getActiveFunctionText();
-  return [
-    `Please consider the following function/method:`,
-    funcText,
-    `Question: ${question}`,
-  ].join("\n\n");
-}
-
-async function getSelectionMessage(question: string) {
-  const selectedText = await getSelectedText();
-  return [
-    `Please consider the following code:`,
-    selectedText,
-    `Question: ${question}`,
-  ].join("\n\n");
-}
-
-export async function getMessage(
-  type: MessageType,
-  question: string
-): Promise<string | undefined> {
+export function buildPrompt(type: MessageType, rawContent: string, question: string): string {
+  let prefix: string;
   switch (type) {
     case "workspace":
-      return getWorkspaceMessage(question);
+      prefix = "Please consider the following project files:";
+      break;
     case "tab":
-      return getTabMessage(question);
+      prefix = "Please consider the following project file:";
+      break;
     case "function":
-      return getFunctionMessage(question);
+      prefix = "Please consider the following function/method:";
+      break;
     case "selection":
-      return getSelectionMessage(question);
+      prefix = "Please consider the following code:";
+      break;
     default:
       return "";
   }
+  return [
+    prefix,
+    rawContent,
+    `Question: ${question}`,
+  ].join("\n\n");
 }
+
+ 

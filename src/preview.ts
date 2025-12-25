@@ -41,7 +41,10 @@ export function showDataPreview(title: string, data: string): Promise<boolean> {
       PREVIEW_PANEL_KEY,
       title,
       vscode.ViewColumn.One,
-      { enableScripts: true }
+      {
+        enableScripts: true,
+        enableFindWidget: true  // Allow user to search within the preview
+      }
     );
 
     // HTML content for the webview

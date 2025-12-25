@@ -7,6 +7,7 @@ import {
   CONFIG_SHOW_PREVIEW,
   CONFIG_ENABLE_STATEFUL_SESSIONS,
   CONFIG_SUBMIT_WITH_EDITOR,
+  CONFIG_LAST_RESPONSE_ID,
 } from "./const";
 
 function getConfigValue(config: string, key: string) {
@@ -46,3 +47,23 @@ export async function getEnableStatefulSessions(): Promise<boolean | undefined> 
 export async function getSubmitWithEditor(): Promise<boolean | undefined> {
   return vscode.workspace.getConfiguration(CONFIG_BASE).get<boolean>(CONFIG_SUBMIT_WITH_EDITOR);
 }
+
+export async function getLastResponseId(): Promise<string | undefined> {
+  // Merged config read: prefers workspace > global (reliable for per-workspace persistence).
+  // No folder scoping needed (VS Code merges folder/workspace/user automatically).
+  return vscode.workspace.getConfiguration(CONFIG_BASE).get<string>(CONFIG_LAST_RESPONSE_ID);
+}
+
+export async function setLastResponseId(id: string): Promise<void> {
+  const hasWorkspace = vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0;
+  const target = hasWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
+  // Per-workspace persistence (writes to .vscode/settings.json) when workspace open; global fallback (rare, no workspace).
+  // Matches package.json "scope": "workspace"; async/non-blocking.
+  await vscode.workspace.getConfiguration(CONFIG_BASE).update(
+    CONFIG_LAST_RESPONSE_ID, 
+    id, 
+    target
+  );
+}
+
+ 

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getApiKey, getModel, setApiKey, getEnableStatefulSessions } from "./config";
+import { getApiKey, getModel, setApiKey, getEnableStatefulSessions, setLastResponseId, getLastResponseId } from "./config";
 import { promptForApiKey, promptForQuestion } from "./ui";
 import { Context } from "./types";
 
@@ -44,18 +44,33 @@ export async function ensureModel(): Promise<string> {
   return model;
 }
 
-export async function prepareWorkspaceContext(): Promise<Context> {
+export async function prepareContextWithoutQuestion(): Promise<Omit<Context, 'question'>> {
+  const apiKey = await ensureApiKey();
+  const model = await ensureModel();
+  const stateful = (await getEnableStatefulSessions()) ?? false;
+  return { apiKey, model, stateful };
+}
+
+export async function prepareWorkspaceContextWithoutQuestion(): Promise<Omit<Context, 'question'> & { workspaceFolder: vscode.WorkspaceFolder }> {
   const workspaceFolder = await ensureWorkspaceOpen();
   return {
     workspaceFolder,
-    ...await prepareContext(),
+    ...await prepareContextWithoutQuestion(),
   };
 }
 
-export async function prepareContext(): Promise<Context> {
-  const apiKey = await ensureApiKey();
-  const model = await ensureModel();
-  const question = await ensureQuestion();
-  const stateful = (await getEnableStatefulSessions()) ?? false;
-  return { apiKey, model, question, stateful };
+// Initializes vscodeGrok.lastResponseId to "" in workspace settings.json if it does not exist
+// (i.e., getLastResponseId() === undefined). Only runs if stateful === true.
+// Called from handleAskGrok after context prep, before API send. Minimal/async-safe.
+export async function initGrokLastResponseIDparam(stateful: boolean): Promise<void> {
+  if (!stateful) {
+    return;
+  }
+  const currentId = await getLastResponseId();
+  if (currentId === undefined || currentId === null) {
+    // Creates key in workspace settings.json (or global fallback) with empty string.
+    // Matches setLastResponseId behavior; proactive init avoids read gaps on new workspaces.
+    await setLastResponseId("");
+  }
 }
+

@@ -16,6 +16,8 @@ function getQuestionEditorContent(): string {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
+      <title>Grok Question Input</title>
       <style>
         body { 
           margin: 0;
@@ -31,9 +33,15 @@ function getQuestionEditorContent(): string {
           resize: vertical;
           font-family: var(--vscode-font-family-monospaced);
           font-size: var(--vscode-editor-font-size);
+          background-color: var(--vscode-input-background);
+          color: var(--vscode-input-foreground);
           border: 1px solid var(--vscode-input-border);
           padding: 10px;
           box-sizing: border-box;
+        }
+        textarea::placeholder {
+          color: var(--vscode-input-placeholderForeground);
+          opacity: 1;
         }
         .buttons {
           margin-top: 20px;
@@ -52,15 +60,34 @@ function getQuestionEditorContent(): string {
     </head>
     <body>
       <h3>Enter your question for Grok (multiline supported):</h3>
-      <textarea id="question" placeholder="Type your question here... Use Enter for new lines, copy/paste from other tabs, etc."></textarea>
+      <textarea
+        id="question"
+        placeholder="Type your question here...&#10;Use Enter for new lines, copy/paste from other tabs, etc..."
+        spellcheck="true"
+        autocorrect="on"
+        value=""></textarea>
       <div class="buttons">
-        <button onclick="submit()">Submit</button>
-        <button onclick="cancel()">Cancel</button>
+        <button id="submit-btn">Submit</button>
+        <button id="cancel-btn">Cancel</button>
       </div>
       <script>
+        'use strict';
         const vscode = acquireVsCodeApi();
-        function submit() { vscode.postMessage({ command: 'submit', text: document.getElementById('question').value }); }
-        function cancel() { vscode.postMessage({ command: 'cancel' }); }
+
+        function submit() {
+          vscode.postMessage({
+            command: 'submit',
+            text: document.getElementById('question').value
+          });
+        }
+        
+        function cancel() {
+          vscode.postMessage({
+            command: 'cancel'
+          });
+        }
+        document.getElementById('submit-btn').addEventListener('click', submit);
+        document.getElementById('cancel-btn').addEventListener('click', cancel);
         document.getElementById('question').focus();
       </script>
     </body>
@@ -78,7 +105,10 @@ async function showQuestionEditor(): Promise<string | undefined> {
       "grokQuestionInput",
       "Enter Question for Grok",
       vscode.ViewColumn.Beside,
-      { enableScripts: true }
+      {
+        enableScripts: true,
+        enableFindWidget: true  // Allow user to search within the editor
+      }
     );
 
     panel.webview.html = getQuestionEditorContent();
@@ -126,3 +156,4 @@ export async function showProgress<T>(
     task
   );
 }
+ 
