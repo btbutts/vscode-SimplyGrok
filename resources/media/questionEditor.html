@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Grok Question Input</title>
+    <style>
+        body { 
+            margin: 0;
+            padding: 20px;
+            font-family: var(--vscode-font-family);
+            height: 100vh;
+            overflow: auto;
+            box-sizing: border-box;
+        }
+        #question {
+            width: 100%;
+            height: 400px;
+            resize: vertical;
+            font-family: var(--vscode-font-family-monospaced);
+            font-size: var(--vscode-editor-font-size);
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            padding: 10px;
+            box-sizing: border-box;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow: auto;
+            -webkit-spellcheck: true;
+            -webkit-user-modify: read-write-plaintext-only;
+        }
+        #question.placeholder {
+            color: var(--vscode-input-placeholderForeground);
+            opacity: 1;
+        }
+        .buttons {
+            margin-top: 20px;
+            padding-bottom: 30px;
+            text-align: center;
+        }
+        button {
+            margin: 0 10px;
+            padding: 8px 16px;
+            font-size: var(--vscode-font-size);
+        }
+        h3 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h3>Enter your question for Grok (multiline supported):</h3>
+    <div
+        id="question"
+        contenteditable="true"
+        spellcheck="true"
+        autocorrect="on"
+        autocapitalize="off"></div>
+    <div class="buttons">
+        <button id="submit-btn">Submit</button>
+        <button id="cancel-btn">Cancel</button>
+    </div>
+    <script>
+        'use strict';
+        const vscode = acquireVsCodeApi();
+        const question = document.getElementById('question');
+        // Isolates drafts per webview instance; prevents cross-tab/session persistence after cancel/close/X
+        let STORAGE_KEY = '';  // Starts empty; set to unique `vscodeGrokQuestionDraft_${sessionId}` via postMessage from extension
+        const placeholderText = "Type your question here...\nUse Enter for new lines, copy/paste from other tabs, etc...";
+
+        // Listen for setSessionId postMessage from extension (TS side); sets unique STORAGE_KEY
+        window.addEventListener('message', function(event) {
+          const message = event.data;
+          if (message.command === 'setSessionId') {
+            STORAGE_KEY = `vscodeGrokQuestionDraft_${message.sessionId}`;
+            loadDraft();  // Initial load after key set (empty first time)
+          }
+        });
+
+        // Explicitly enable native spellcheck via JS properties (reinforces HTML attr/CSS for webview reliability)
+        // Handles Chromium/VS Code inconsistencies; sets lang for dictionary; re-applies on events to force re-check
+        function enableSpellcheck() {
+            question.spellcheck = true;  // Standard DOM property (enables red underlines/suggestions)
+            if ('webkitSpellcheck' in question) {
+                question.webkitSpellcheck = true;  // WebKit/Chromium-specific (VS Code webview)
+            }
+            question.lang = navigator.language || 'en-US';  // Language dict for spellcheck (user locale fallback)
+            question.autocapitalize = 'sentences';  // Native capitalize mode (reinforces beforeinput JS)
+            question.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        // Persistence functions to save text in case
+        // user switches away and comes back to webview
+        // during editing.
+        function saveDraft() {
+            if (STORAGE_KEY && !question.classList.contains('placeholder')) {
+                sessionStorage.setItem(STORAGE_KEY, question.innerText);
+            }
+        }
+
+        function loadDraft() {
+            const saved = STORAGE_KEY ? sessionStorage.getItem(STORAGE_KEY) : null;
+            if (saved && saved.trim()) {
+                question.innerText = saved;
+                question.classList.remove('placeholder');
+            } else {
+                // Fallback to placeholder if no draft
+                question.innerText = placeholderText;
+                question.classList.add('placeholder');
+            }
+        }
+
+        function clearDraft() {
+            if (STORAGE_KEY) {
+                sessionStorage.removeItem(STORAGE_KEY);
+            }
+        }
+
+        // Set initial placeholder or restore draft
+        //loadDraft();
+
+        // Enable spellcheck post-load (handles draft restore)
+        enableSpellcheck();
+
+        question.addEventListener('focus', function() {
+            if (question.classList.contains('placeholder')) {
+                question.classList.remove('placeholder');
+                question.innerText = '';
+            }
+            enableSpellcheck();  // Re-enable on focus (tab switch refresh)
+        });
+
+        question.addEventListener('blur', function() {
+            saveDraft();  // Persist on blur (tab switch)
+            if (question.innerText.trim() === '') {
+                question.classList.add('placeholder');
+                question.innerText = placeholderText;
+            }
+        });
+
+        // Ensure placeholder class is removed on input/paste/etc. + persist
+        question.addEventListener('input', function() {
+            question.classList.remove('placeholder');
+            saveDraft();  // Auto-save on every change
+            enableSpellcheck();  // Re-apply spellcheck post-input (dynamic content scan
+        });
+
+        question.addEventListener('paste', function() {
+            question.classList.remove('placeholder');
+            saveDraft();  // Auto-save on paste
+            enableSpellcheck();  // Re-apply spellcheck after paste (dynamic content scan
+        });
+
+        // Additional persistence: visibility/page events (tab switches, minimize)
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            saveDraft();
+          } else {
+            loadDraft();
+          }
+        });
+
+        window.addEventListener('pagehide', saveDraft);  // Before unload/tab switch
+        window.addEventListener('pageshow', loadDraft);  // On load/tab switch back
+
+        // Simple JS autocorrect enhancement: Capitalize after .!?
+        question.addEventListener('beforeinput', function(e) {
+          if (e.inputType === 'insertText' && e.data === ' ') {
+            const text = question.innerText;
+            const lastChar = text.slice(-1);
+            if (['.', '!', '?'].includes(lastChar)) {
+              // Auto-capitalize next word (insert upper)
+              e.preventDefault();
+              document.execCommand('insertText', false, e.data.toUpperCase());
+            }
+          }
+        });
+
+        function submit() {
+            clearDraft();  // Clear on submit
+            let text = '';
+            if (!question.classList.contains('placeholder')) {
+                text = question.innerText;
+            }
+            vscode.postMessage({
+                command: 'submit',
+                text: text
+            });
+        }
+        
+        function cancel() {
+            clearDraft();  // Clear on cancel
+            vscode.postMessage({
+                command: 'cancel'
+            });
+        }
+        document.getElementById('submit-btn').addEventListener('click', submit);
+        document.getElementById('cancel-btn').addEventListener('click', cancel);
+        document.focus();
+    </script>
+</body>
+</html>

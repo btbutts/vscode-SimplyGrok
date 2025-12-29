@@ -73,12 +73,13 @@ export async function sendToGrok(
   apiKey: string,
   model: string,
   content: string,
-  stateful: boolean
+  stateful: boolean,
+  context: vscode.ExtensionContext
 ): Promise<GrokAPIResponse> {
   const url = stateful ? API_URL_STATEFUL : API_URL;
   let response;
   if (stateful) {
-    const previousId = await getLastResponseId();
+    const previousId = await getLastResponseId(context);
     const body = {
       input: [{ role: "user" as const, content }],
       model,
@@ -94,7 +95,7 @@ export async function sendToGrok(
       },
     });
     if (response.data.id) {
-      await setLastResponseId(response.data.id);
+      await setLastResponseId(context, response.data.id);
     }
     // Temporary: Capture json output from Stateful API
     // Call immediately after axios.post & ID store (raw response.data pre-type guards).

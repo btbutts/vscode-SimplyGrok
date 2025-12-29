@@ -1,4 +1,5 @@
 const esbuild = require("esbuild");
+const fsExtra = require('fs-extra');
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -18,6 +19,10 @@ const esbuildProblemMatcherPlugin = {
 				console.error(`✘ [ERROR] ${text}`);
 				console.error(`    ${location.file}:${location.line}:${location.column}:`);
 			});
+
+			if (result.errors.length === 0) {
+				copyAssets();  // Copy html on successful build/end
+			}
 			console.log('[watch] build finished');
 		});
 	},
@@ -42,12 +47,29 @@ async function main() {
 			esbuildProblemMatcherPlugin,
 		],
 	});
+
+	// Perform initial build (triggers plugin onStart/onEnd)
+	const initialResult = await ctx.rebuild();
+	if (initialResult.errors.length > 0) {
+		throw new Error('Initial build failed');
+	}
+	
 	if (watch) {
-		await ctx.watch();
+		await ctx.watch(); // Stays watching for subsequent changes and rebuilds
 	} else {
 		await ctx.rebuild();
 		await ctx.dispose();
 	}
+}
+
+function copyAssets() {
+  fsExtra.copy('resources/media', 'dist/media', { overwrite: true })
+    .then(() => {
+      console.log('Assets copied to dist/media');
+    })
+    .catch(err => {
+      console.error('Error copying assets:', err);
+    });
 }
 
 main().catch(e => {

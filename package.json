@@ -108,12 +108,6 @@
           "type": "boolean",
           "default": false,
           "description": "Enable submitting questions via a dedicated editor\nwindow instead of the Command Palette Input Box.\n(supports multiline, copy/paste, tab-switching)"
-        },
-        "vscodeGrok.lastResponseId": {
-          "type": "string",
-          "default": "",
-          "description": "Last response ID from Grok for stateful sessions.",
-          "scope": "workspace"
         }
       }
     },
@@ -169,6 +163,7 @@
     "@vscode/test-electron": "^2.4.1",
     "esbuild": "^0.27.2",
     "eslint": "^9.19.0",
+    "fs-extra": "^11.3.3",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.7.3"
   },

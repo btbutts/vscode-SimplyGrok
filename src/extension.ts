@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { sendToGrok } from "./api";
 import { 
-  prepareContextWithoutQuestion, 
-  prepareWorkspaceContextWithoutQuestion, 
+  prepareGrokQueryConfig, 
+  prepareWorkspaceContext, 
   ensureQuestion,
   initGrokLastResponseIDparam
 } from "./context";
@@ -26,10 +26,11 @@ async function handleSendToGrok(
   apiKey: string,
   model: string,
   prompt: string,
-  stateful: boolean
+  stateful: boolean,
+  context: vscode.ExtensionContext
 ): Promise<void> {
   const response: GrokAPIResponse = await showProgress("Grok is thinking...", () =>
-    sendToGrok(apiKey, model, prompt, stateful)
+    sendToGrok(apiKey, model, prompt, stateful, context)
   );
 
   // Validation + narrowing of non-stateful vs stateful response structure via type guards
@@ -54,7 +55,7 @@ async function handleSendToGrok(
   }
 }
 
-async function handleAskGrok(type: MessageType): Promise<void> {
+async function handleAskGrok(type: MessageType, context: vscode.ExtensionContext): Promise<void> {
   try {
     let rawContent: string;
     if (type === "workspace") {
@@ -79,20 +80,20 @@ async function handleAskGrok(type: MessageType): Promise<void> {
       }
     }
 
-    const context =
+    const GrokQueryConfig =
       type === "workspace"
-        ? await prepareWorkspaceContextWithoutQuestion()
-        : await prepareContextWithoutQuestion();
+        ? await prepareWorkspaceContext()
+        : await prepareGrokQueryConfig();
 
-    const question = await ensureQuestion();
+    const question = await ensureQuestion(context);
     if (!question) {
       return;
     }
 
     // If stateful and lastResponseId not initialized,
     // proactively create it in workspace settings.json.
-    if (context.stateful) {
-      await initGrokLastResponseIDparam(context.stateful);
+    if (GrokQueryConfig.stateful) {
+      await initGrokLastResponseIDparam(GrokQueryConfig.stateful, context);
     }
 
     const prompt = buildPrompt(type, rawContent, question);
@@ -104,7 +105,7 @@ async function handleAskGrok(type: MessageType): Promise<void> {
       return;
     }
 
-    await handleSendToGrok(context.apiKey, context.model, prompt, context.stateful);
+    await handleSendToGrok(GrokQueryConfig.apiKey, GrokQueryConfig.model, prompt, GrokQueryConfig.stateful, context);
   } catch (error) {
     console.error(error);
   }
@@ -255,16 +256,16 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand("vscode-grok.askGrokWorkspace", () =>
-      handleAskGrok("workspace")
+      handleAskGrok("workspace", context)
     ),
     vscode.commands.registerCommand("vscode-grok.askGrokTab", () =>
-      handleAskGrok("tab")
+      handleAskGrok("tab", context)
     ),
     vscode.commands.registerCommand("vscode-grok.askGrokFunction", () =>
-      handleAskGrok("function")
+      handleAskGrok("function", context)
     ),
     vscode.commands.registerCommand("vscode-grok.askGrokSelection", () =>
-      handleAskGrok("selection")
+      handleAskGrok("selection", context)
     )
   );
 }

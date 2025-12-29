@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { getSubmitWithEditor } from "./config";
+import { QuestionEditorLoadError } from "./types";
 
 export async function promptForApiKey(): Promise<string> {
   const input = await vscode.window.showInputBox({
@@ -11,7 +12,7 @@ export async function promptForApiKey(): Promise<string> {
 }
 
 // Question webview editor - input content
-function getQuestionEditorContent(): string {
+/*function getQuestionEditorContent(): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -27,7 +28,7 @@ function getQuestionEditorContent(): string {
           overflow: auto;
           box-sizing: border-box;
         }
-        textarea {
+        #question {
           width: 100%;
           height: 400px;
           resize: vertical;
@@ -38,8 +39,11 @@ function getQuestionEditorContent(): string {
           border: 1px solid var(--vscode-input-border);
           padding: 10px;
           box-sizing: border-box;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          overflow: auto;
         }
-        textarea::placeholder {
+        #question.placeholder {
           color: var(--vscode-input-placeholderForeground);
           opacity: 1;
         }
@@ -60,12 +64,12 @@ function getQuestionEditorContent(): string {
     </head>
     <body>
       <h3>Enter your question for Grok (multiline supported):</h3>
-      <textarea
+      <div
         id="question"
-        placeholder="Type your question here...&#10;Use Enter for new lines, copy/paste from other tabs, etc..."
+        contenteditable="true"
         spellcheck="true"
         autocorrect="on"
-        value=""></textarea>
+        autocapitalize="off"></div>
       <div class="buttons">
         <button id="submit-btn">Submit</button>
         <button id="cancel-btn">Cancel</button>
@@ -73,11 +77,40 @@ function getQuestionEditorContent(): string {
       <script>
         'use strict';
         const vscode = acquireVsCodeApi();
+        const question = document.getElementById('question');
+        const placeholderText = "Type your question here...&#10;Use Enter for new lines, copy/paste from other tabs, etc...";
+
+        // Set initial placeholder
+        question.innerText = placeholderText;
+        question.classList.add('placeholder');
+
+        question.addEventListener('focus', function() {
+          if (question.classList.contains('placeholder')) {
+            question.classList.remove('placeholder');
+            question.innerText = '';
+          }
+        });
+
+        question.addEventListener('blur', function() {
+          if (question.innerText.trim() === '') {
+            question.classList.add('placeholder');
+            question.innerText = placeholderText;
+          }
+        });
+
+        // Ensure placeholder class is removed on input/paste/etc.
+        question.addEventListener('input', function() {
+          question.classList.remove('placeholder');
+        });
 
         function submit() {
+          let text = '';
+          if (!question.classList.contains('placeholder')) {
+            text = question.innerText;
+          }
           vscode.postMessage({
             command: 'submit',
-            text: document.getElementById('question').value
+            text: text
           });
         }
         
@@ -88,18 +121,38 @@ function getQuestionEditorContent(): string {
         }
         document.getElementById('submit-btn').addEventListener('click', submit);
         document.getElementById('cancel-btn').addEventListener('click', cancel);
-        document.getElementById('question').focus();
+        document.focus();
       </script>
     </body>
     </html>
   `;
+}
+*/
+
+async function getQuestionEditorContent(context: vscode.ExtensionContext): Promise<string> {
+  try {
+    // Path matches provided file: /resources/media/questionEditor.html relative to extension root
+    const htmlUri = vscode.Uri.joinPath(context.extensionUri, 'resources', 'media', 'questionEditor.html');
+    const htmlContent = await vscode.workspace.fs.readFile(htmlUri);
+    // Convert Uint8Array to UTF-8 string (consistent with readFileAsUtf8 in src/editor.ts; async/non-blocking)
+    return Buffer.from(htmlContent).toString("utf-8");
+  } catch (error) {
+    // Instantiate custom error with original as cause (chainable; instanceof safe)
+    const loadError = new QuestionEditorLoadError(
+      'Failed to find or load question editor HTML',
+      error as Error
+    );
+    console.error('Failed to find or load question editor HTML:', loadError);
+    // Re-throw the original error so callers can handle it
+    throw loadError;
+  }
 }
 
 // Optional webview editor for question input,
 // rather than use Command Palette's input box
 // Is user selectable via settings.json
 // "vscodeGrok.submitWithEditor"
-async function showQuestionEditor(): Promise<string | undefined> {
+async function showQuestionEditor(context: vscode.ExtensionContext): Promise<string | undefined> {
   return new Promise((resolve) => {
     const panel = vscode.window.createWebviewPanel(
       "grokQuestionInput",
@@ -107,11 +160,25 @@ async function showQuestionEditor(): Promise<string | undefined> {
       vscode.ViewColumn.Beside,
       {
         enableScripts: true,
-        enableFindWidget: true  // Allow user to search within the editor
+        enableFindWidget: true,  // Allow user to search within the editor
+        localResourceRoots: [vscode.Uri.file(context.extensionPath)]
       }
     );
 
-    panel.webview.html = getQuestionEditorContent();
+    // Await the async HTML load (non-blocking)
+    getQuestionEditorContent(context).then((htmlContent) => {
+      panel.webview.html = htmlContent;
+      // Generate unique sessionId for this webview instance to isolate sessionStorage key
+      // Ensures drafts do not persist across new webview tabs/sessions (cancel/close/X)
+      const sessionId = `grokq-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+      panel.webview.postMessage({
+        command: 'setSessionId',
+        sessionId: sessionId
+      });
+    }).catch((error) => {
+      console.error('Failed to set webview HTML:', error);
+      resolve(undefined);
+    });
 
     panel.webview.onDidReceiveMessage((message) => {
       switch (message.command) {
@@ -132,10 +199,10 @@ async function showQuestionEditor(): Promise<string | undefined> {
 
 // Will now prompt the user to enter a question,
 // either via input box, or webview editor
-export async function promptForQuestion(): Promise<string | undefined> {
+export async function promptForQuestion(context: vscode.ExtensionContext): Promise<string | undefined> {
   const useEditor = await getSubmitWithEditor() ?? false;
   if (useEditor) {
-    return await showQuestionEditor();
+    return await showQuestionEditor(context);
   }
   const input = await vscode.window.showInputBox({
     prompt: "Enter your question for Grok",

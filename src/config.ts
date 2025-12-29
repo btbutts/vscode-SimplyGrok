@@ -48,22 +48,17 @@ export async function getSubmitWithEditor(): Promise<boolean | undefined> {
   return vscode.workspace.getConfiguration(CONFIG_BASE).get<boolean>(CONFIG_SUBMIT_WITH_EDITOR);
 }
 
-export async function getLastResponseId(): Promise<string | undefined> {
-  // Merged config read: prefers workspace > global (reliable for per-workspace persistence).
-  // No folder scoping needed (VS Code merges folder/workspace/user automatically).
-  return vscode.workspace.getConfiguration(CONFIG_BASE).get<string>(CONFIG_LAST_RESPONSE_ID);
+export async function getLastResponseId(context: vscode.ExtensionContext): Promise<string | undefined> {
+  // Retrieves the last response ID from ExtensionContext.workspaceState.
+  // Persists per-workspace across VS Code sessions/reloads (tied to workspace folder index).
+  // Returns undefined if not previously set.
+  return context.workspaceState.get(CONFIG_LAST_RESPONSE_ID) ?? '';
 }
 
-export async function setLastResponseId(id: string): Promise<void> {
-  const hasWorkspace = vscode.workspace.workspaceFolders !== undefined && vscode.workspace.workspaceFolders.length > 0;
-  const target = hasWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global;
-  // Per-workspace persistence (writes to .vscode/settings.json) when workspace open; global fallback (rare, no workspace).
-  // Matches package.json "scope": "workspace"; async/non-blocking.
-  await vscode.workspace.getConfiguration(CONFIG_BASE).update(
-    CONFIG_LAST_RESPONSE_ID, 
-    id, 
-    target
-  );
+export async function setLastResponseId(context: vscode.ExtensionContext, id: string): Promise<void> {
+  // Stores the last response ID in ExtensionContext.workspaceState for per-workspace persistence.
+  // Survives workspace closing/reopening; async/non-blocking.
+  // No workspace fallback needed (workspaceState handles multi-root/single-folder uniformly).
+  await context.workspaceState.update(CONFIG_LAST_RESPONSE_ID, id);
 }
 
- 

@@ -62,4 +62,14 @@ export function isChatCompletionResponse(response: GrokAPIResponse): response is
 export function isStatefulAPIResponse(response: GrokAPIResponse): response is StatefulAPIResponse {
   return 'output' in response && Array.isArray(response.output) && response.output.length > 0;
 }
- 
+
+/**
+ * Custom error for failures loading question editor HTML from resources/media/questionEditor.html.
+ * Extends Error for runtime checks (instanceof); includes cause for error chaining.
+ */
+export class QuestionEditorLoadError extends Error {
+  constructor(message: string, public readonly cause?: Error) {
+    super(message);
+    this.name = 'QuestionEditorLoadError';
+  }
+}
