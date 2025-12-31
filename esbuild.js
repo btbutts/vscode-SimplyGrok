@@ -1,5 +1,6 @@
 const esbuild = require("esbuild");
 const fsExtra = require('fs-extra');
+const path = require('path');
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
@@ -63,12 +64,60 @@ async function main() {
 }
 
 function copyAssets() {
-  fsExtra.copy('resources/media', 'dist/media', { overwrite: true })
-    .then(() => {
-      console.log('Assets copied to dist/media');
+	let excludedDirs = ['dicts', 'logs', '.DS_Store', 'Thumbs.db', 'files/'];
+	excludedDirs = excludedDirs.map(ex => ex.replace(/\/$|\\$/, ''));
+	
+	fsExtra.copy('media', 'resources/media', {
+		overwrite: true,
+		filter: (src, dest) => {
+			const relativePath = path.relative('media', src);
+
+			const probableFiles = excludedDirs.filter(ex => ex.startsWith('.'));
+			const probableDirs = excludedDirs.filter(ex => !ex.startsWith('.'));
+
+			// Exclude files anywhere via endsWith (more precise than basename for extensions)
+      		if (probableFiles.some(excluded => relativePath.endsWith(excluded))) {
+        		return false;
+      		}
+
+			// Recursive dir exclusion: Check if path contains the dir segment
+      		if (probableDirs.some(excluded => {
+        		const excludedSegment = `${path.sep}${excluded}${path.sep}`;
+        		return relativePath.includes(excludedSegment) || 
+               		relativePath === excluded || 
+               		relativePath.startsWith(`${excluded}${path.sep}`);
+      		})) {
+        		return false;
+      		}
+      		return true;
+		}
+	})
+	.then(() => {
+    	console.log('Assets copied to resources/media');
+		
+		// Rename source files to runtime names
+		const draftWebViewEditorHTML = path.join(
+			__dirname,
+			'resources/media/questionEditorDraft.html'
+		);
+		const runtimeWebViewEditorHTML = path.join(
+			__dirname,
+			'resources/media/questionEditor.html'
+		);
+		const webViewEditorHTMLfilename = path.basename(runtimeWebViewEditorHTML);
+		try {
+    		fsExtra.moveSync(
+				draftWebViewEditorHTML,
+				runtimeWebViewEditorHTML,
+				{ overwrite: true }
+			);
+    		console.log(`${webViewEditorHTMLfilename} renamed successfully!`);
+		} catch (error) {
+    		console.error('Error renaming file:', error);
+		}
     })
     .catch(err => {
-      console.error('Error copying assets:', err);
+    	console.error('Error copying assets:', err);
     });
 }
 

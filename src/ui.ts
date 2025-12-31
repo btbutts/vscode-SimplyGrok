@@ -161,13 +161,40 @@ async function showQuestionEditor(context: vscode.ExtensionContext): Promise<str
       {
         enableScripts: true,
         enableFindWidget: true,  // Allow user to search within the editor
-        localResourceRoots: [vscode.Uri.file(context.extensionPath)]
+        localResourceRoots: [context.extensionUri]
       }
     );
 
-    // Await the async HTML load (non-blocking)
+    // Compute Typo.js webview URIs
+    const extensionUri = context.extensionUri;
+    const typoUri = panel.webview.asWebviewUri(
+      vscode.Uri.joinPath(extensionUri, 'resources', 'lib', 'typo.js')
+    );
+    const dictUri = panel.webview.asWebviewUri(
+      vscode.Uri.joinPath(extensionUri, 'resources', 'lib', 'dictionaries')
+    );
+
+    // HTML load
     getQuestionEditorContent(context).then((htmlContent) => {
-      panel.webview.html = htmlContent;
+      // Inject Typo.js <script> tags before main <script> (ensures Typo global ready before usage)
+      // Uses lastIndexOf('</script>') for precise insert (handles inline script position)
+      const scriptInject = `
+      <script src="${typoUri.toString()}"></script>
+      <script>
+      // Global dict path for Typo.js XHR loads (webview:// resolves /en_US/typo-index.js correctly)
+      window.TYPO_JS_DICT_PATH = "${dictUri.toString()}";
+      </script>`;
+
+      let finalHtml = htmlContent;
+      const lastScriptEnd = finalHtml.lastIndexOf('</script>');
+      if (lastScriptEnd !== -1) {
+        finalHtml = finalHtml.slice(0, lastScriptEnd) + scriptInject + finalHtml.slice(lastScriptEnd);
+      } else {
+        // Fallback: before </body>
+        finalHtml = finalHtml.replace('</body>', scriptInject + '</body>');
+      }
+
+      panel.webview.html = finalHtml;
       // Generate unique sessionId for this webview instance to isolate sessionStorage key
       // Ensures drafts do not persist across new webview tabs/sessions (cancel/close/X)
       const sessionId = `grokq-${Date.now()}-${Math.floor(Math.random() * 10000)}`;

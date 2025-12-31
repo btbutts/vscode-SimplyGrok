@@ -1,5 +1,6 @@
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
+import ignore from "ignore";
 
 export default [{
     files: ["**/*.ts"],
@@ -25,4 +26,10 @@ export default [{
         "no-throw-literal": "warn",
         semi: "warn",
     },
+
+    ignores: [
+        "**/node_modules/**",
+        "out/**",
+        "dist/**",
+        "resources/lib/**"]
 }];
