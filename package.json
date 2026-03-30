@@ -39,6 +39,7 @@
             "grok-code-fast",
             "grok-4",
             "grok-4-1-fast-reasoning",
+            "grok-4.20-reasoning",
             "grok-3",
             "grok-3-mini"
           ],
@@ -51,7 +52,7 @@
             "outputChannel"
           ],
           "default": "tab",
-          "description": "Where to display Grok responses: 'tab' for a new editor tab, 'outputChannel' for the Output panel."
+          "description": "Where to display Grok responses:\n - 'tab' for a new editor tab\n - 'outputChannel' for the Output panel."
         },
         "vscodeGrok.showPreview": {
           "type": "string",
@@ -61,7 +62,7 @@
             "never"
           ],
           "default": "workspace-only",
-          "description": "Controls when a preview of the data being sent to the Grok API is displayed. 'always' shows a preview for all requests, 'workspace-only' shows a preview only for requests involving the entire workspace (useful for reviewing large file sets), and 'never' disables the preview entirely. Defaults to 'workspace-only' to balance usability and efficiency, as workspace requests often involve more data."
+          "description": "Controls when a preview of the data being sent to the Grok API is displayed.\n'always' shows a preview for all requests, 'workspace-only' shows a preview only for requests\ninvolving the entire workspace (useful for reviewing large file sets), and 'never'\ndisables the preview entirely. Defaults to 'workspace-only' to balance usability and\nefficiency, as workspace requests often involve more data."
         },
         "vscodeGrok.excludeFiles": {
           "type": "array",
@@ -88,7 +89,11 @@
             "tsconfig.json",
             ".vscode-test.mjs",
             "vscode-grok-*.vsix",
-            "**/resources/lib/**"
+            "**/resources/lib/**",
+            ".prettierignore",
+            ".prettierrc",
+            ".npmrc",
+            "**/.svelte-kit/**"
           ],
           "description": "Exclude files or directories by glob patterns or exact matches from workspace queries.\n(e.g., ['**/.vscode/**', '**/node_modules/**', '.gitignore'])"
         },
@@ -109,6 +114,29 @@
           "type": "boolean",
           "default": false,
           "description": "Enable submitting questions via a dedicated editor\nwindow instead of the Command Palette Input Box.\n(supports multiline, copy/paste, tab-switching)"
+        },
+        "vscodeGrok.tokensPerRequest": {
+          "type": "integer",
+          "default": null,
+          "enum": [
+            1024,
+            2048,
+            4096,
+            8192,
+            16384,
+            24576,
+            32768,
+            49152,
+            65536,
+            131072,
+            262144
+          ],
+          "description": "The maximum number of tokens that may be sent to Grok in a single request.\nAdjust based on your needs and API model limits.\nIf unset, Grok defaults will apply."
+        },
+        "vscodeGrok.captureResponseData": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable capturing of raw response data from the Grok API for debugging purposes.\nWhen enabled, raw JSON responses will be saved to the extension's global storage\ndirectory with filenames based on the response ID."
         }
       }
     },
@@ -137,6 +165,11 @@
         "command": "vscode-grok.toggleStatefulAPI",
         "title": "Set Grok: Enable Stateful Sessions",
         "description": "Enable stateful sessions with Grok, allowing context retention across multiple interactions."
+      },
+      {
+        "command": "vscode-grok.clearStatefulSession",
+        "title": "Ask Grok: Clear Stateful Session",
+        "description": "Clear the current stateful session context stored in the extension."
       }
     ]
   },

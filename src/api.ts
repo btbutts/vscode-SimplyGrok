@@ -1,6 +1,10 @@
 import axios from "axios";
 import { API_URL, API_URL_STATEFUL } from "./const";
-import { getLastResponseId, setLastResponseId } from "./config";
+import { getLastResponseId,
+  setLastResponseId,
+  getTokensPerRequest,
+  isCaptureRawResponses
+} from "./config";
 import { GrokAPIResponse } from "./types";
 // Temporary: Capture json output from Stateful API
 // Used for short-term testing and debugging
@@ -80,6 +84,10 @@ export async function sendToGrok(
   let response;
   if (stateful) {
     const previousId = await getLastResponseId(context);
+    const tokensPerRequest = await getTokensPerRequest();
+    // Body param 'max_output_tokens' is conditionally
+    // included if tokensPerRequest is a positive number;
+    // otherwise omitted to use API default (excluded).
     const body = {
       input: [{ role: "user" as const, content }],
       model,
@@ -87,6 +95,9 @@ export async function sendToGrok(
       temperature: 0,
       store: true,
       ...(previousId && { previous_response_id: previousId }),
+      ...(typeof tokensPerRequest === "number" && tokensPerRequest > 0
+        ? { max_output_tokens: tokensPerRequest }
+        : {}),
     };
     response = await axios.post(url, body, {
       headers: {
@@ -99,7 +110,12 @@ export async function sendToGrok(
     }
     // Temporary: Capture json output from Stateful API
     // Call immediately after axios.post & ID store (raw response.data pre-type guards).
-    await debugWriteRawResponseToFile(response.data, response.data.id ?? 'unknown-response-id');
+    if (await isCaptureRawResponses()) {
+      await debugWriteRawResponseToFile(
+        response.data,
+        response.data.id ?? 'unknown-response-id',
+      );
+    }
   } else {
     response = await axios.post(
       url,

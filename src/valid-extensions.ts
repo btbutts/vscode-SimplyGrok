@@ -167,4 +167,7 @@ export const VALID_EXTENSIONS = new Set<string>([
   ".fs",
   ".fsi",
   ".fsx",
+  // Logs
+  ".log",
+  ".logs",
 ]);

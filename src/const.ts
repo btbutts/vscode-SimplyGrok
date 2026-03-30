@@ -9,6 +9,9 @@ export const CONFIG_SHOW_PREVIEW = "showPreview";
 export const CONFIG_ENABLE_STATEFUL_SESSIONS = "enableStatefulSessions";
 export const CONFIG_SUBMIT_WITH_EDITOR = "submitWithEditor";
 export const CONFIG_LAST_RESPONSE_ID = "lastResponseId";
+export const CONFIG_LAST_RESPONSE_TIMESTAMP = "lastResponseTimestamp";
+export const CONFIG_TOKENS_PER_REQUEST = "tokensPerRequest";
+export const CONFIG_CAPTURE_RESPONSE_DATA = "captureResponseData";
 
 export const OUTPUT_CHANNEL_NAME = "Grok Response";
 export const OUTPUT_METHOD_TAB = "tab";

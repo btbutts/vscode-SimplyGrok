@@ -3,8 +3,7 @@ import { sendToGrok } from "./api";
 import { 
   prepareGrokQueryConfig, 
   prepareWorkspaceContext, 
-  ensureQuestion,
-  initGrokLastResponseIDparam
+  ensureQuestion
 } from "./context";
 import { displayResponse, displayStatefulResponse } from "./display";
 import { 
@@ -21,6 +20,7 @@ import {
   isStatefulAPIResponse
 } from "./types";
 import { showProgress } from "./ui";
+import { clearLastResponse } from "./config";
 
 async function handleSendToGrok(
   apiKey: string,
@@ -88,12 +88,6 @@ async function handleAskGrok(type: MessageType, context: vscode.ExtensionContext
     const question = await ensureQuestion(context);
     if (!question) {
       return;
-    }
-
-    // If stateful and lastResponseId not initialized,
-    // proactively create it in workspace settings.json.
-    if (GrokQueryConfig.stateful) {
-      await initGrokLastResponseIDparam(GrokQueryConfig.stateful, context);
     }
 
     const prompt = buildPrompt(type, rawContent, question);
@@ -223,6 +217,65 @@ async function toggleStatefulAPI(context: vscode.ExtensionContext): Promise<void
   }, 10000);
 }
 
+// Marquee-style scrolling banner for "Clear Stateful Session" command.
+// Replaces button 'vscode.StatusBarItem' for 10s with news ticker effect.
+// Reuses tempActive/tempIconTimeout for safe revert.
+async function showClearMessage(
+  context: vscode.ExtensionContext,
+  durationMs: number = 19500
+): Promise<void> {
+  if (!statusBarItem) {
+    return;
+  }
+
+  tempActive = true;
+
+  const message = 'Grok stateful session cleared. ' +
+    'A new session will start on the next stateful request to Grok.';
+  // Codicon + message + padding spaces for smooth cycle
+  const marqueeText = ` $(info) ${message} `;  
+  const visibleChars = 35;  // Approx current button width + margin (compact)
+  const tickDuration = 400;  // Smooth scroll speed (ms)
+
+  let offset = 0;
+  let intervalId: NodeJS.Timeout | undefined;
+  const tick = () => {
+    const slice = marqueeText.slice(offset, offset + visibleChars);
+    statusBarItem!.text = slice.length < visibleChars ? `${slice}...` : slice;  // Ellipsis if short
+    offset = (offset + 2) % marqueeText.length;  // Cycle for continuous scroll
+  };
+
+  tick();  // Initial message display
+
+  // Clear any prior timeout
+  if (tempIconTimeout) {
+    clearTimeout(tempIconTimeout);
+    tempIconTimeout = undefined;
+  }
+
+  // Marquee effect: Start after 5s to allow initial read,
+  // then scroll every tickDuration ms.
+  setTimeout(() => {
+    intervalId = setInterval(tick, tickDuration);
+  }, 5000);
+
+  //const intervalId = setInterval(tick, tickDuration);
+
+  tempIconTimeout = setTimeout(async () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = undefined;
+    }
+    tempActive = false;
+    if (tempIconTimeout) {
+      clearTimeout(tempIconTimeout);
+      tempIconTimeout = undefined;
+    }
+    // Revert to normal button after completing marquee
+    await updateStatusBar(context);
+  }, durationMs);
+}
+
 export function activate(context: vscode.ExtensionContext) {
   // Create status bar item (isolated; always visible)
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -251,6 +304,15 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('vscode-grok.toggleStatefulAPI', async () => {
       await toggleStatefulAPI(context);
+    })
+  );
+
+  // Clear Stateful Session command
+  context.subscriptions.push(
+    vscode.commands.registerCommand('vscode-grok.clearStatefulSession', async () => {
+      await clearLastResponse(context);
+      //vscode.window.showInformationMessage('Grok stateful session cleared. A new session will start on the next stateful request.');
+      showClearMessage(context);
     })
   );
 

@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
-import { getApiKey, getModel, setApiKey, getEnableStatefulSessions, setLastResponseId, getLastResponseId } from "./config";
+import { getApiKey,
+  getModel,
+  setApiKey,
+  getEnableStatefulSessions
+} from "./config";
 import { promptForApiKey, promptForQuestion } from "./ui";
 import { Context } from "./types";
 
@@ -57,21 +61,5 @@ export async function prepareWorkspaceContext(): Promise<Omit<Context, 'question
     workspaceFolder,
     ...await prepareGrokQueryConfig(),
   };
-}
-
-// Initializes statefulGrokResponseID (via workspaceState) to "" if it does not exist
-// (i.e., getLastResponseId(context) === undefined). Only runs if stateful === true.
-// Called from handleAskGrok after context prep, before API send
-// Ensures previous_response_id param is always defined/valid for stateful API calls.
-export async function initGrokLastResponseIDparam(stateful: boolean, context: vscode.ExtensionContext): Promise<void> {
-  if (!stateful) {
-    return;
-  }
-  const currentId = await getLastResponseId(context);
-  if (currentId === undefined || currentId === null || currentId === "") {
-    // Initializes key in ExtensionContext.workspaceState with empty string.
-    // Matches setLastResponseId behavior; proactive init avoids read gaps on new workspaces.
-    await setLastResponseId(context, "");
-  }
 }
 

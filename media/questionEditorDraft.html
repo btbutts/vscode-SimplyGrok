@@ -115,7 +115,6 @@
                 question.classList.remove('placeholder');
                 question.innerText = '';
             }
-            enableSpellcheck();  // Re-enable on focus (tab switch refresh)
         });
 
         question.addEventListener('blur', function() {
@@ -292,6 +291,7 @@
         initTypo();
 
         function submit() {
+            console.log('Submit clicked');  // << Temp: Check webview console for event firing
             clearDraft();  // Clear on submit
             let text = '';
             if (!question.classList.contains('placeholder')) {
@@ -304,6 +304,7 @@
         }
         
         function cancel() {
+            console.log('Cancel clicked');  // << Temp: Check webview console for event firing
             clearDraft();  // Clear on cancel
             vscode.postMessage({
                 command: 'cancel'

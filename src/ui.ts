@@ -181,14 +181,16 @@ async function showQuestionEditor(context: vscode.ExtensionContext): Promise<str
       const scriptInject = `
       <script src="${typoUri.toString()}"></script>
       <script>
-      // Global dict path for Typo.js XHR loads (webview:// resolves /en_US/typo-index.js correctly)
-      window.TYPO_JS_DICT_PATH = "${dictUri.toString()}";
+      // Global dict path for Typo.js XHR loads (webview URI)
+      window.TYPO_DICT_PATH = "${dictUri.toString()}";
       </script>`;
 
       let finalHtml = htmlContent;
-      const lastScriptEnd = finalHtml.lastIndexOf('</script>');
+      const scriptClosingTag = '</script>';  // Explicit for length
+      const lastScriptEnd = finalHtml.lastIndexOf(scriptClosingTag);
       if (lastScriptEnd !== -1) {
-        finalHtml = finalHtml.slice(0, lastScriptEnd) + scriptInject + finalHtml.slice(lastScriptEnd);
+        const insertPos = lastScriptEnd + scriptClosingTag.length;
+        finalHtml = finalHtml.slice(0, insertPos) + scriptInject + finalHtml.slice(insertPos);
       } else {
         // Fallback: before </body>
         finalHtml = finalHtml.replace('</body>', scriptInject + '</body>');
