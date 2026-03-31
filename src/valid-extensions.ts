@@ -170,4 +170,6 @@ export const VALID_EXTENSIONS = new Set<string>([
   // Logs
   ".log",
   ".logs",
+  // Svelte
+  ".svelte",
 ]);
