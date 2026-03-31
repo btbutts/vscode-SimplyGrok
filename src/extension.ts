@@ -222,7 +222,7 @@ async function toggleStatefulAPI(context: vscode.ExtensionContext): Promise<void
 // Reuses tempActive/tempIconTimeout for safe revert.
 async function showClearMessage(
   context: vscode.ExtensionContext,
-  durationMs: number = 19500
+  durationMs: number = 19000
 ): Promise<void> {
   if (!statusBarItem) {
     return;
@@ -235,14 +235,14 @@ async function showClearMessage(
   // Codicon + message + padding spaces for smooth cycle
   const marqueeText = ` $(info) ${message} `;  
   const visibleChars = 35;  // Approx current button width + margin (compact)
-  const tickDuration = 400;  // Smooth scroll speed (ms)
+  const tickDuration = 21;  // Smooth scroll speed (ms)
 
   let offset = 0;
   let intervalId: NodeJS.Timeout | undefined;
   const tick = () => {
     const slice = marqueeText.slice(offset, offset + visibleChars);
-    statusBarItem!.text = slice.length < visibleChars ? `${slice}...` : slice;  // Ellipsis if short
-    offset = (offset + 2) % marqueeText.length;  // Cycle for continuous scroll
+    statusBarItem!.text = slice.length < visibleChars ? `   ${slice} ` : slice;  // Ellipsis if short
+    offset = (offset + 0.125) % marqueeText.length;  // Cycle for continuous scroll
   };
 
   tick();  // Initial message display
